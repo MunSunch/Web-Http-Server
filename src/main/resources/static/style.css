@@ -1,5 +1,13 @@
 .container {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-around;
+}
+
+body {
+    margin: 0 auto;
+}
+
+.mydiv {
+    display: inline-block;
 }

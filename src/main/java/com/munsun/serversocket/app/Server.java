@@ -1,12 +1,12 @@
 package com.munsun.serversocket.app;
 
+import com.munsun.serversocket.app.handlers.Handler;
+import com.munsun.serversocket.app.handlers.impl.DefaultHandler;
+import com.munsun.serversocket.app.handlers.impl.NotFoundExceptionHandler;
 import com.munsun.serversocket.app.http.*;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -17,12 +17,19 @@ public class Server {
     private final ConcurrentHashMap<String, Handler> handlers;
     private final ExecutorService pool;
     private final Parser parser;
+    private final int limit;
+    private static final int DEFAULT_LIMIT = 4096;
 
     public Server(int countThread, Parser parser) {
+        this(countThread, parser, DEFAULT_LIMIT);
+    }
+
+    public Server(int countThread, Parser parser, int limit) {
         this.validPaths = new CopyOnWriteArrayList<>();
+        this.handlers = new ConcurrentHashMap<>();
         this.pool = Executors.newFixedThreadPool(countThread);
         this.parser = parser;
-        this.handlers = new ConcurrentHashMap<>();
+        this.limit = limit;
     }
 
     public void start(int port) {
@@ -32,16 +39,25 @@ public class Server {
                 if(!socket.isClosed()) {
                     pool.execute(() -> {
                         try (
-                                final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                                final var in = new BufferedInputStream(socket.getInputStream());
                                 final var out = new BufferedOutputStream(socket.getOutputStream());
                         ) {
-                            String rawRequest = readRequest(in);
+                            byte[] rawRequest = readRequest(in);
                             Request request = parser.toRequest(rawRequest);
+
+                            //Query params - GET
+//                            System.out.println(request.getQueryParams());
+//                            System.out.println(request.getQueryParam("image"));
+
+                            //x-www-form-urlencoded
+                            System.out.println(request.getPostParams());
+                            //System.out.println(request.getPostParam("image"));
+                            System.out.println(request);
+
                             executeRequest(request, out);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        Thread.currentThread().interrupt();
                     });
                 }
             }
@@ -50,14 +66,11 @@ public class Server {
         }
     }
 
-    private String readRequest(BufferedReader in) throws IOException {
-        String line;
-        StringBuilder res = new StringBuilder();
-        while(!"".equals(line = in.readLine())) {
-            res.append(line);
-            res.append("\r\n");
-        }
-        return res.toString();
+    private byte[] readRequest(BufferedInputStream in) throws IOException {
+        in.mark(limit);
+        var buffer = new byte[limit];
+        var eof = in.read(buffer);
+        return buffer;
     }
 
     public void addHandler(HttpMethodType methodType, String path) {
@@ -70,6 +83,10 @@ public class Server {
 
     private void executeRequest(Request request, BufferedOutputStream out) throws IOException {
         String path = request.getRequestLine().getUri();
+        int indexStartQuery = path.indexOf('?');
+        if(indexStartQuery != -1)
+            path = path.substring(0, indexStartQuery);
+
         if(!handlers.containsKey(path)) {
             new NotFoundExceptionHandler().handle(request, out);
         } else {

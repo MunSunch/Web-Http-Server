@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class ServerMain {
     private static final int DEFAULT_COUNT_THREAD = 64;
     public static void main(String[] args) {
-        Server server = new Server(DEFAULT_COUNT_THREAD, new HttpParser());
+        Server server = new Server(DEFAULT_COUNT_THREAD, new HttpByteParser());
         server.addHandler(HttpMethodType.GET, "/spring.png");
         server.addHandler(HttpMethodType.GET, "/apache-tomcat.jpg");
         server.addHandler(HttpMethodType.GET, "/spring-framework-logo.png");
@@ -37,6 +37,9 @@ public class ServerMain {
             responseStream.write(response.getBytes());
             responseStream.flush();
         });
+        server.addHandler(HttpMethodType.GET, "/forms-get.html");
+        server.addHandler(HttpMethodType.POST, "/forms-post.html");
+
         server.start(9998);
     }
 }
