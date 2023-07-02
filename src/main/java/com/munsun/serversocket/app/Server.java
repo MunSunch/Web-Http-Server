@@ -46,13 +46,8 @@ public class Server {
                             Request request = parser.toRequest(rawRequest);
 
                             //Query params - GET
-//                            System.out.println(request.getQueryParams());
-//                            System.out.println(request.getQueryParam("image"));
-
-                            //x-www-form-urlencoded
-                            System.out.println(request.getPostParams());
-                            //System.out.println(request.getPostParam("image"));
-                            System.out.println(request);
+                            System.out.println(request.getQueryParams());
+                            System.out.println(request.getQueryParam("image"));
 
                             executeRequest(request, out);
                         } catch (IOException e) {
