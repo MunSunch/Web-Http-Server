@@ -1,5 +1,6 @@
-package com.munsun.serversocket.app;
+package com.munsun.serversocket.app.handlers.impl;
 
+import com.munsun.serversocket.app.handlers.Handler;
 import com.munsun.serversocket.app.http.HttpStatus;
 import com.munsun.serversocket.app.http.Request;
 import com.munsun.serversocket.app.http.Response;
